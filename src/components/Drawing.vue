@@ -12,13 +12,17 @@
       <button @click="prev">Prev</button>
       <button @click="next">Next</button>
       <button @click="insertFrame">Insert Frame</button>
+      <button @click="insertAfter">Insert After</button>
+      <button @click="deleteFrame">Delete Frame</button>
+
     </div>
 
     <!-- list frames -->
     <div class="frames">
       <div v-for="(frame, index) in frames" :key="index"
+        class="frame-item"
         :class="{ active: index === currentFrame }"
-        @click="currentFrame = index"
+        @click="loadFrame(index)"
       >
         {{ index }}
         <img :src="frame.data" class="thumb" />
@@ -87,6 +91,18 @@ export default {
       this.frames[this.currentFrame] = frame;
       // this.frames.push(frame);
     },
+    loadFrame(index){
+      const frame = this.frames[index];
+      if(!frame) return;
+      const ctx = this.ctx;
+      const canvas = ctx.canvas;
+      const img = new Image();
+      img.src = frame.data;
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0);
+      }
+      this.currentFrame = index;
+    },
     prev(){
       this.currentFrame--;
       this.draw();
@@ -107,23 +123,47 @@ export default {
         img.onload = () => {
           ctx.drawImage(img, 0, 0);
         }
-        
-        // const offscreenCanvas = offscreenCanvases[frame.uuid];
-        // if(offscreenCanvas){
-        //   ctx.drawImage(offscreenCanvas, 0, 0);
-        // }
       }
+    },
+    crearCanvas(){
+      const canvas = this.$refs.canvas;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, this.width, this.height);
     },
     insertFrame(){
       const offscreenCanvas = document.createElement('canvas');
       offscreenCanvas.width = this.width;
       offscreenCanvas.height = this.height;
-      const ctx = offscreenCanvases[uuid()] = offscreenCanvas.getContext('2d');
-      ctx.drawImage(this.$refs.canvas, 0, 0);
+
+      const ctx = offscreenCanvas.getContext('2d');
+      this.crearCanvas()
+      // const ctx = offscreenCanvases[uuid()] = offscreenCanvas.getContext('2d');
+      // ctx.drawImage(this.$refs.canvas, 0, 0);
       this.frames.splice(this.currentFrame, 0, {
         uuid: uuid(),
         data: offscreenCanvas.toDataURL()
       });
+    },
+    insertAfter(){
+      const offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = this.width;
+      offscreenCanvas.height = this.height;
+
+      const ctx = offscreenCanvas.getContext('2d');
+      this.crearCanvas()
+      // const ctx = offscreenCanvases[uuid()] = offscreenCanvas.getContext('2d');
+      // ctx.drawImage(this.$refs.canvas, 0, 0);
+      this.frames.splice(this.currentFrame + 1, 0, {
+        uuid: uuid(),
+        data: offscreenCanvas.toDataURL()
+      });
+      this.currentFrame++;
+    },
+    deleteFrame(){
+      this.frames.splice(this.currentFrame, 1);
+      this.currentFrame = 0;
+      this.draw();
     }
   },
   mounted() {
@@ -138,10 +178,26 @@ export default {
 </script>
 
 <style>
-.thumb{
+/* .thumb{
   width: 100px;
   height: 100px;
   border: 1px solid black;
+  display: inline-block;
+} */
+.frame-item{
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  border: 1px solid black;
+  margin: 5px;
+  cursor: pointer;
+}
+.frame-item.active{
+  border: 1px solid red;
+}
+.frame-item img{
+  width: 100%;
+  height: 100%;
 }
 .canvas{
   border: 1px solid black;
